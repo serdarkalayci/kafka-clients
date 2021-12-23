@@ -5,21 +5,21 @@ FROM golang:alpine AS builder
 # Install git.
 # Git is required for fetching the dependencies.
 RUN apk update && apk add --no-cache git
-WORKDIR $GOPATH/src/producer/
+WORKDIR $GOPATH/src/consumer/
 COPY . .
 # Fetch dependencies.
 # Using go get.
 RUN go get -d -v
 # Build the binary.
-RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o /go/bin/producer
+RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o /go/bin/consumer
 ############################
 # STEP 2 build a small image
 ############################
 FROM scratch
 # Copy our static executable.
-COPY --from=builder /go/bin/producer /go/bin/producer
-ENV BIND_ADDRESS :5550
+COPY --from=builder /go/bin/consumer /go/bin/consumer
 ENV KAFKA_BROKER localhost:9092
 ENV KAFKA_TOPIC my_topic
+ENV KAFKA_CONSUMER_GROUP my-topic-consumers
 # Run the binary.
-ENTRYPOINT ["/go/bin/producer"]
+ENTRYPOINT ["/go/bin/consumer"]
